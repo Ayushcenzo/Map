@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react';
 
-// Bounding box for India roughly (minLon, minLat, maxLon, maxLat)
 const INDIA_BBOX = "68.1,6.5,97.4,35.5";
+
+// Global memory cache to prevent duplicate network requests
+const searchCache = new Map();
+const reverseCache = new Map();
 
 export const useGeocoding = () => {
   const [loading, setLoading] = useState(false);
@@ -10,10 +13,14 @@ export const useGeocoding = () => {
   const searchAddress = useCallback(async (query) => {
     if (!query || query.trim().length < 2) return [];
     
+    const cacheKey = query.trim().toLowerCase();
+    if (searchCache.has(cacheKey)) {
+      return searchCache.get(cacheKey);
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      // Use Photon API with bounding box restricted to India
       const response = await fetch(
         `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&bbox=${INDIA_BBOX}`
       );
@@ -23,11 +30,10 @@ export const useGeocoding = () => {
       const data = await response.json();
       setLoading(false);
       
-      return data.features.map(feature => {
+      const results = data.features.map(feature => {
         const props = feature.properties;
-        const coords = feature.geometry.coordinates; // [lon, lat]
+        const coords = feature.geometry.coordinates;
         
-        // Construct a clean display name
         const parts = [props.name, props.district, props.city, props.state].filter(Boolean);
         const displayName = Array.from(new Set(parts)).join(', ');
 
@@ -39,6 +45,15 @@ export const useGeocoding = () => {
           address: props
         };
       });
+
+      searchCache.set(cacheKey, results);
+      // Keep cache from growing infinitely
+      if (searchCache.size > 100) {
+        const firstKey = searchCache.keys().next().value;
+        searchCache.delete(firstKey);
+      }
+
+      return results;
     } catch (err) {
       setLoading(false);
       setError(err.message);
@@ -47,6 +62,11 @@ export const useGeocoding = () => {
   }, []);
 
   const reverseGeocode = useCallback(async (lat, lng) => {
+    const cacheKey = `${lat},${lng}`;
+    if (reverseCache.has(cacheKey)) {
+      return reverseCache.get(cacheKey);
+    }
+
     try {
       const response = await fetch(
         `https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`
@@ -59,12 +79,20 @@ export const useGeocoding = () => {
         const parts = [props.name, props.street, props.district, props.city, props.state].filter(Boolean);
         const displayName = Array.from(new Set(parts)).join(', ');
         
-        return {
+        const result = {
           name: displayName || 'Selected Location',
           lat,
           lng,
           address: props
         };
+
+        reverseCache.set(cacheKey, result);
+        if (reverseCache.size > 100) {
+          const firstKey = reverseCache.keys().next().value;
+          reverseCache.delete(firstKey);
+        }
+
+        return result;
       }
       return null;
     } catch (err) {

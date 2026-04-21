@@ -17,8 +17,7 @@ export const SearchBar = ({ onSearch, onOpenNav, currentLayer, onLayerChange }) 
   }, []);
 
   return (
-    <div className="absolute top-6 left-6 z-[1000] w-full max-w-sm flex items-center gap-2 pointer-events-none">
-      {/* Floating Search Container */}
+    <div className="absolute top-4 md:top-6 left-4 right-4 md:left-6 md:right-auto md:w-[400px] z-[1000] flex items-center gap-2 pointer-events-none">
       <div className="flex-1 bg-white rounded-2xl shadow-lg shadow-black/5 pointer-events-auto flex items-center border border-slate-200 relative">
         <div ref={menuRef} className="relative">
           <button 
@@ -57,7 +56,7 @@ export const SearchBar = ({ onSearch, onOpenNav, currentLayer, onLayerChange }) 
 
         <div className="flex-1">
           <LocationInput 
-            placeholder="Search Google Maps" 
+            placeholder="Search here" 
             icon={Search}
             onLocationSelect={onSearch}
             className="border-none shadow-none rounded-none [&>div]:border-none [&>div]:shadow-none focus-within:ring-0 focus-within:border-transparent bg-transparent"

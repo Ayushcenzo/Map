@@ -21,7 +21,6 @@ export const LocationInput = ({
     setQuery(initialValue);
   }, [initialValue]);
 
-  // Handle outside click to close dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -32,7 +31,6 @@ export const LocationInput = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.length >= 3 && isOpen) {
